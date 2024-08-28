@@ -10,6 +10,9 @@ API는 REST가 아닌 많이 경험하지 않은 GraphQL로 제공하고, 추후
 
 ### 프로젝트 설정
 
+- NestJS 설치(`nest new project`를 이용하여 `yarn`으로 설치)
+- `eslint`, `prettier` 대신 `lefthook`, `biomejs/biome` 설치
+
 ### API 구현
 
 ### 배포
