@@ -13,6 +13,13 @@ API는 REST가 아닌 많이 경험하지 않은 GraphQL로 제공하고, 추후
 - NestJS 설치(`nest new project`를 이용하여 `yarn`으로 설치)
 - `eslint`, `prettier` 대신 `lefthook`, `biomejs/biome` 설치
 
+#### .env.local 생성
+
+```
+NODE_TLS_REJECT_UNAUTHORIZED=0
+DB_URI=mongodb://localhost:27017/x-clone
+```
+
 ### API 구현
 
 ### 배포
