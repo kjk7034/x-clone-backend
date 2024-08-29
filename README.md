@@ -17,9 +17,88 @@ API는 REST가 아닌 많이 경험하지 않은 GraphQL로 제공하고, 추후
 
 ```
 NODE_TLS_REJECT_UNAUTHORIZED=0
-DB_URI=mongodb://localhost:27017/x-clone
+DATABASE_URL=mongodb://localhost:27017/x-clone
+JWT_SECRET=
 ```
 
+#### Prisma generate
+
+`npx prisma generate` 실행
+
+### Prisma + MongoDB 겪은 이슈
+
+이전 개발환경은 Window에서 MongoDB를 설치하고 MongoDB Compass로 확인하면서 테스트를 했었다.
+
+NestJS에서 Prisma에서 설치후 create 시 `which requires your MongoDB server to be run as a replica set.` replica set 환경을 요구했다.
+
+그래서 도커로 실행시켰다. (`docker-compose.yml`)
+
+동작까지는 잘 확인했는데, MongoDB Compass로 `mongodb://localhost:27017/x-clone?directConnection=true`을 접근하면 DB가 연동이 되지 않았다.
+
+원인은 윈도우 시스템에 MongoDB가 실행되고 있어서 그쪽을 바라보고 있었다. 그래서 시스템에 MongoDB를 중단하고 진행했다.
+
+만약 둘다 사용한다면 도커 포트를 `27018:27017`과 같이 변경할 수도 있다.
+
 ### API 구현
+
+```
+/
+├── prisma/
+│   └── schema.prisma
+├── src/
+│   ├── app.module.ts
+│   ├── main.ts
+│   ├── config/
+│   │   └── configuration.ts
+│   ├── auth/
+│   │   ├── auth.module.ts
+│   │   ├── auth.service.ts
+│   │   ├── auth.resolver.ts
+│   │   ├── jwt.strategy.ts
+│   │   └── dto/
+│   │       └── login.dto.ts
+│   ├── users/
+│   │   ├── users.module.ts
+│   │   ├── users.service.ts
+│   │   ├── users.resolver.ts
+│   │   └── dto/
+│   │       ├── create-user.dto.ts
+│   │       └── update-user.dto.ts
+│   ├── posts/
+│   │   ├── posts.module.ts
+│   │   ├── posts.service.ts
+│   │   ├── posts.resolver.ts
+│   │   └── dto/
+│   │       ├── create-post.dto.ts
+│   │       ├── update-post.dto.ts
+│   │       └── post-response.dto.ts
+│   ├── images/
+│   │   ├── images.module.ts
+│   │   ├── images.service.ts
+│   │   └── images.resolver.ts
+│   ├── tags/
+│   │   ├── tags.module.ts
+│   │   ├── tags.service.ts
+│   │   └── tags.resolver.ts
+│   ├── common/
+│   │   ├── decorators/
+│   │   │   └── current-user.decorator.ts
+│   │   ├── guards/
+│   │   │   └── jwt-auth.guard.ts
+│   │   └── middlewares/
+│   │       └── jwt.middleware.ts
+│   └── prisma/
+│       └── prisma.service.ts
+├── test/
+│   ├── app.e2e-spec.ts
+│   ├── jest-e2e.json
+│   └── ...
+├── .env
+├── .gitignore
+├── nest-cli.json
+├── package.json
+├── README.md
+└── tsconfig.json
+```
 
 ### 배포

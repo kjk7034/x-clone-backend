@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  # MongoDB Replica Set
+  mongo:
+    container_name: x-clone
+    image: mongo:6.0
+    ports:
+      - 27017:27017
+    command:
+      - mongod
+      - --replSet
+      - rs0
+      - --bind_ip_all
+    healthcheck:
+      test: test $$(echo "rs.initiate().ok || rs.status().ok" | mongosh --quiet) -eq 1
+      interval: 10s
+      start_period: 30s
