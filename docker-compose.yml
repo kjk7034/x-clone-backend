@@ -1,11 +1,10 @@
-version: "3.9"
 services:
   # MongoDB Replica Set
   mongo:
     container_name: x-clone
     image: mongo:6.0
     ports:
-      - 27017:27017
+      - 27018:27017
     command:
       - mongod
       - --replSet

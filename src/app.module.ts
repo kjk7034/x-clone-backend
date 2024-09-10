@@ -1,18 +1,31 @@
-import { ApolloDriver } from '@nestjs/apollo';
-import { Module } from '@nestjs/common';
+// biome-ignore lint/style/useNodejsImportProtocol: <explanation>
+import { join } from 'path';
+import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
+import { type MiddlewareConsumer, Module, type NestModule, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
+import { AuthModule } from './auth/auth.module';
+import { JwtMiddleware } from './common/middlewares/jwt.middleware';
+import { ImagesModule } from './images/images.module';
+import { JwtModule } from './jwt/jwt.module';
+import { PostsModule } from './posts/posts.module';
 import { PrismaService } from './prisma/prisma.service';
+import { TagsModule } from './tags/tags.module';
 import { UsersModule } from './users/users.module';
-
-import { join } from 'node:path';
-import type { ApolloDriverConfig } from '@nestjs/apollo';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: process.env.NODE_ENV === 'dev' ? '.env.local' : '.env.local',
+      load: [
+        () => ({
+          jwt: {
+            secret: process.env.JWT_SECRET,
+            expiresIn: process.env.JWT_EXPIRES_IN,
+          },
+        }),
+      ],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -20,14 +33,22 @@ import type { ApolloDriverConfig } from '@nestjs/apollo';
       buildSchemaOptions: {
         dateScalarMode: 'timestamp',
       },
-      // biome-ignore lint/complexity/useLiteralKeys: <explanation>
-      context: ({ req }) => ({ user: req['user'] }),
+      context: ({ req, res }) => ({ req, res }),
     }),
+    JwtModule,
+    AuthModule,
     UsersModule,
-    // AuthModule,
+    PostsModule,
+    ImagesModule,
+    TagsModule,
   ],
-  controllers: [],
-  providers: [PrismaService],
-  exports: [PrismaService],
+  providers: [PrismaService, UsersModule],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(JwtMiddleware).forRoutes({
+      path: '/graphql',
+      method: RequestMethod.POST,
+    });
+  }
+}
