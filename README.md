@@ -32,8 +32,6 @@ pnpm run prisma:generate
 pnpm run start:dev
 ```
 
-### prisma g
-
 ## GraphQL API 엔드포인트 예시
 
 [GRAPHQL_EXAMPLE](./docs/GRAPHQL_EXAMPLE.md)
