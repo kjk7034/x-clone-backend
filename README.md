@@ -49,68 +49,10 @@ docker ps
 
 # Redis CLI 실행 (conatainer_name : x-clone-redis)
 docker exec -it x-clone-redis redis-cli
+
+127.0.0.1:6379> keys *
 ```
 
-### API 구현
+### 배포 계획
 
-```
-/
-├── prisma/
-│   └── schema.prisma
-├── src/
-│   ├── app.module.ts
-│   ├── main.ts
-│   ├── config/
-│   │   └── configuration.ts
-│   ├── auth/
-│   │   ├── auth.module.ts
-│   │   ├── auth.service.ts
-│   │   ├── auth.resolver.ts
-│   │   ├── jwt.strategy.ts
-│   │   └── dto/
-│   │       └── login.dto.ts
-│   ├── users/
-│   │   ├── users.module.ts
-│   │   ├── users.service.ts
-│   │   ├── users.resolver.ts
-│   │   └── dto/
-│   │       ├── create-user.dto.ts
-│   │       └── update-user.dto.ts
-│   ├── posts/
-│   │   ├── posts.module.ts
-│   │   ├── posts.service.ts
-│   │   ├── posts.resolver.ts
-│   │   └── dto/
-│   │       ├── create-post.dto.ts
-│   │       ├── update-post.dto.ts
-│   │       └── post-response.dto.ts
-│   ├── images/
-│   │   ├── images.module.ts
-│   │   ├── images.service.ts
-│   │   └── images.resolver.ts
-│   ├── tags/
-│   │   ├── tags.module.ts
-│   │   ├── tags.service.ts
-│   │   └── tags.resolver.ts
-│   ├── common/
-│   │   ├── decorators/
-│   │   │   └── current-user.decorator.ts
-│   │   ├── guards/
-│   │   │   └── jwt-auth.guard.ts
-│   │   └── middlewares/
-│   │       └── jwt.middleware.ts
-│   └── prisma/
-│       └── prisma.service.ts
-├── test/
-│   ├── app.e2e-spec.ts
-│   ├── jest-e2e.json
-│   └── ...
-├── .env
-├── .gitignore
-├── nest-cli.json
-├── package.json
-├── README.md
-└── tsconfig.json
-```
-
-### 배포
+사내 클라우드 사용
