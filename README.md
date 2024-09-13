@@ -39,6 +39,18 @@ NestJS에서 Prisma에서 설치후 create 시 `which requires your MongoDB serv
 
 만약 둘다 사용한다면 도커 포트를 `27018:27017`과 같이 변경할 수도 있다.
 
+### Redis 설치 및 확인
+
+docker로 설치했으며, 확인은 다음과 같이 실행. (window)
+
+```bash
+# Redis 컨테이너 확인
+docker ps
+
+# Redis CLI 실행 (conatainer_name : x-clone-redis)
+docker exec -it x-clone-redis redis-cli
+```
+
 ### API 구현
 
 ```

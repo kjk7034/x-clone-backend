@@ -32,35 +32,12 @@ mutation {
 
 ## me (내정보)
 
-http headers에 `{ x-jwt: "access_token" }` 추가
+http headers에 `{ 'Authorization': 'Bearer ${access_token}' }` 추가
 
 ```graphql
 {
   me {
     id
-    email
-    nickname
-  }
-}
-```
-
-## 전체 User 목록 가져오기
-
-```graphql
-{
-  users {
-    id
-    email
-    nickname
-  }
-}
-```
-
-## User 정보 가져오기
-
-```graphql
-{
-  user(id: "") {
     email
     nickname
   }
@@ -76,5 +53,13 @@ mutation {
     email
     nickname
   }
+}
+```
+
+## 로그아웃
+
+```graphql
+mutation {
+  logout
 }
 ```

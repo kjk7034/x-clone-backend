@@ -1,7 +1,9 @@
+version: "3.8"
+
 services:
   # MongoDB Replica Set
   mongo:
-    container_name: x-clone
+    container_name: x-clone-mongo
     image: mongo:6.0
     ports:
       - 27018:27017
@@ -14,3 +16,16 @@ services:
       test: test $$(echo "rs.initiate().ok || rs.status().ok" | mongosh --quiet) -eq 1
       interval: 10s
       start_period: 30s
+
+  # Redis
+  redis:
+    container_name: x-clone-redis
+    image: redis:7.0-alpine
+    ports:
+      - 6379:6379
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

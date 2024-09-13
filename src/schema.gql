@@ -2,16 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type LoginResponse {
-  access_token: String!
-}
-
 type User {
   id: ID!
-  email: String!
-  nickname: String!
   createdAt: Timestamp!
   updatedAt: Timestamp!
+  email: String!
+  nickname: String!
 }
 
 """
@@ -19,71 +15,20 @@ type User {
 """
 scalar Timestamp
 
-type Image {
-  id: ID!
-  link: String!
-  postId: String!
-}
-
-type Post {
-  id: ID!
-  content: String!
-  author: User!
-  authorId: String!
-  images: [Image!]
-  parent: Post
-  parentId: String
-  comments: [Post!]
-  createdAt: Timestamp!
-  updatedAt: Timestamp!
-}
-
-type Tag {
-  id: ID!
-  title: String!
-  count: Int!
+type LoginResponse {
+  access_token: String!
 }
 
 type Query {
-  users: [User!]!
-  user(id: String!): User!
   me: User!
-  posts: [Post!]!
-  post(id: String!): Post!
-  images: [Image!]!
-  image(id: String!): Image!
-  tags: [Tag!]!
-  tag(id: String!): Tag!
+  user(id: String!): User!
 }
 
 type Mutation {
-  createUser(createUserInput: CreateUserInput!): User!
-  updateUser(updateUserInput: UpdateUserInput!): User!
-  removeUser: User!
   login(loginInput: LoginInput!): LoginResponse!
   logout: Boolean!
-  createPost(createPostInput: CreatePostInput!): Post!
-  updatePost(updatePostInput: UpdatePostInput!): Post!
-  removePost(id: String!): Post!
-  createImage(createImageInput: CreateImageInput!): Image!
-  removeImage(id: String!): Image!
-  createTag(createTagInput: CreateTagInput!): Tag!
-  updateTag(updateTagInput: UpdateTagInput!): Tag!
-  removeTag(id: String!): Tag!
-}
-
-input CreateUserInput {
-  email: String!
-  password: String!
-  nickname: String!
-  image: String
-}
-
-input UpdateUserInput {
-  email: String
-  password: String
-  nickname: String
-  image: String
+  createUser(createUserInput: CreateUserInput!): User!
+  updateUser(updateUserInput: UpdateUserInput!): User!
 }
 
 input LoginInput {
@@ -91,29 +36,14 @@ input LoginInput {
   password: String!
 }
 
-input CreatePostInput {
-  content: String!
-  authorId: String!
-  parentId: String
+input CreateUserInput {
+  email: String!
+  password: String!
+  nickname: String!
 }
 
-input UpdatePostInput {
-  content: String
-  authorId: String
-  parentId: String
-  id: String!
-}
-
-input CreateImageInput {
-  link: String!
-  postId: String!
-}
-
-input CreateTagInput {
-  title: String!
-}
-
-input UpdateTagInput {
-  title: String
-  id: String!
+input UpdateUserInput {
+  email: String
+  password: String
+  nickname: String
 }

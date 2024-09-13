@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserInput } from './dto/create-user.dto';
@@ -9,54 +9,90 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserInput: CreateUserInput) {
-    const hashedPassword = await bcrypt.hash(createUserInput.password, 10);
-    return this.prisma.user.create({
-      data: {
-        ...createUserInput,
-        password: hashedPassword,
-      },
+    // 먼저 이메일이 이미 존재하는지 확인
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: createUserInput.email },
     });
-  }
 
-  async findAll() {
-    return this.prisma.user.findMany();
-  }
-
-  async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
     }
-    return user;
-  }
 
-  async findByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+    const hashedPassword = await bcrypt.hash(createUserInput.password, 10);
+
+    try {
+      return await this.prisma.user.create({
+        data: {
+          ...createUserInput,
+          password: hashedPassword,
+        },
+      });
+    } catch (error) {
+      // Prisma의 고유 제약 조건 위반 오류를 잡습니다 (추가적인 안전장치)
+      if (error.code === 'P2002') {
+        throw new ConflictException('Email already exists');
+      }
+      throw error; // 다른 종류의 오류는 그대로 전파
+    }
   }
 
   async update(id: string, updateUserInput: UpdateUserInput) {
-    // 비밀번호 업데이트가 포함된 경우 해시화
-    if (updateUserInput.password) {
-      updateUserInput.password = await bcrypt.hash(updateUserInput.password, 10);
+    try {
+      // 사용자가 존재하는지 먼저 확인
+      const existingUser = await this.prisma.user.findUnique({
+        where: { id },
+      });
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      // 이메일 변경 시 중복 확인
+      if (updateUserInput.email) {
+        if (updateUserInput.email === existingUser.email) {
+          throw new ConflictException(
+            'No changes were made to the email as the provided email is the same as the current one.',
+          );
+        }
+        const emailExists = await this.prisma.user.findFirst({
+          where: { email: updateUserInput.email },
+        });
+        if (emailExists) {
+          throw new ConflictException('Email already exists');
+        }
+      }
+
+      // 비밀번호 변경 시 해시화
+      if (updateUserInput.password) {
+        updateUserInput.password = await bcrypt.hash(updateUserInput.password, 10);
+      }
+
+      // 사용자 정보 업데이트
+      return await this.prisma.user.update({
+        where: { id },
+        data: updateUserInput,
+      });
+    } catch (error) {
+      if (error instanceof ConflictException || error instanceof NotFoundException) {
+        throw error;
+      }
+      // Prisma의 고유 제약 조건 위반 오류 처리
+      if (error.code === 'P2002') {
+        throw new ConflictException('Email already exists');
+      }
+      // 기타 Prisma 오류 처리
+      if (error.code === 'P2025') {
+        throw new NotFoundException('User not found');
+      }
+      // 그 외의 오류는 그대로 전파
+      throw error;
     }
-
-    const updatedUser = await this.prisma.user.update({
-      where: { id },
-      data: updateUserInput,
-    });
-
-    if (!updatedUser) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    return updatedUser;
   }
 
-  async remove(id: string) {
-    const deletedUser = await this.prisma.user.delete({ where: { id } });
-    if (!deletedUser) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return deletedUser;
+  async findByEmail(email: string) {
+    return this.prisma.user.findFirst({ where: { email } });
+  }
+
+  async findOne(id: string) {
+    return this.prisma.user.findUnique({ where: { id } });
   }
 }

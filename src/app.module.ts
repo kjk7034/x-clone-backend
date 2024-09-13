@@ -1,16 +1,13 @@
 // biome-ignore lint/style/useNodejsImportProtocol: <explanation>
 import { join } from 'path';
 import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
-import { type MiddlewareConsumer, Module, type NestModule, RequestMethod } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { CacheModule, CacheStore } from '@nestjs/cache-manager';
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
+import { redisStore } from 'cache-manager-redis-store';
 import { AuthModule } from './auth/auth.module';
-import { JwtMiddleware } from './common/middlewares/jwt.middleware';
-import { ImagesModule } from './images/images.module';
-import { JwtModule } from './jwt/jwt.module';
-import { PostsModule } from './posts/posts.module';
 import { PrismaService } from './prisma/prisma.service';
-import { TagsModule } from './tags/tags.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -35,20 +32,22 @@ import { UsersModule } from './users/users.module';
       },
       context: ({ req, res }) => ({ req, res }),
     }),
-    JwtModule,
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        store: redisStore as unknown as CacheStore,
+        host: configService.get('REDIS_HOST'),
+        port: configService.get('REDIS_PORT'),
+      }),
+      inject: [ConfigService],
+    }),
     AuthModule,
     UsersModule,
-    PostsModule,
-    ImagesModule,
-    TagsModule,
+    // PostsModule,
+    // ImagesModule,
+    // TagsModule,
   ],
-  providers: [PrismaService, UsersModule],
+  providers: [PrismaService],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(JwtMiddleware).forRoutes({
-      path: '/graphql',
-      method: RequestMethod.POST,
-    });
-  }
-}
+export class AppModule {}

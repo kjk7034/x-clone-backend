@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  email            String    @unique
+  nickname         String
+  image            String?
+  password         String
+  provider         String    @default("local")
+  snsId            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  posts            Post[]    @relation("UserPosts")
+  hearts           PostHeart[]
+  followers        User[]    @relation("Follow", fields: [followersIDs], references: [id])
+  followersIDs     String[]  @db.ObjectId
+  followings       User[]    @relation("Follow", fields: [followingsIDs], references: [id])
+  followingsIDs    String[]  @db.ObjectId
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+model Post {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  content      String
+  userId       String     @db.ObjectId
+  user         User       @relation("UserPosts", fields: [userId], references: [id])
+  createdAt    DateTime   @default(now())
+  images       PostImage[]
+  hashtags     String[]
+  parentId     String?    @db.ObjectId
+  commentCount Int        @default(0)
+  heartCount   Int        @default(0)
+  repostCount  Int        @default(0)
+  parent       Post?      @relation("Comments", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comments     Post[]     @relation("Comments")
+  originalId   String?    @db.ObjectId
+  original     Post?      @relation("Reposts", fields: [originalId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reposts      Post[]     @relation("Reposts")
+  hearts       PostHeart[]
+  deletedAt    DateTime?
+}
+
+model PostHeart {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  postId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+model PostImage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  link      String
+  createdAt DateTime @default(now())
+  postId    String   @db.ObjectId
+  post      Post     @relation(fields: [postId], references: [id])
+}
+
+model Message {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String   @db.ObjectId
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  room       String
+  content    String
+  receiverId String   @db.ObjectId
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  createdAt  DateTime @default(now())
+}
