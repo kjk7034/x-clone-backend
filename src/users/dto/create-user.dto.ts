@@ -12,7 +12,7 @@ export class CreateUserInput {
   @MinLength(8)
   password: string;
 
-  @Field({ nullable: true })
+  @Field()
   @IsString()
-  name?: string;
+  nickname: string;
 }

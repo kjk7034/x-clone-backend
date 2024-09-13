@@ -1,19 +1,11 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { CoreEntity } from 'src/common/entities/common.entity';
 
 @ObjectType()
-export class User {
-  @Field(() => ID)
-  id: string;
-
+export class User extends CoreEntity {
   @Field()
   email: string;
 
-  @Field({ nullable: true })
-  name?: string;
-
   @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
+  nickname: string;
 }

@@ -1,18 +1,28 @@
-import { ApolloDriver } from '@nestjs/apollo';
+// biome-ignore lint/style/useNodejsImportProtocol: <explanation>
+import { join } from 'path';
+import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
+import { CacheModule, CacheStore } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
+import { redisStore } from 'cache-manager-redis-store';
+import { AuthModule } from './auth/auth.module';
 import { PrismaService } from './prisma/prisma.service';
 import { UsersModule } from './users/users.module';
-
-import { join } from 'node:path';
-import type { ApolloDriverConfig } from '@nestjs/apollo';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: process.env.NODE_ENV === 'dev' ? '.env.local' : '.env.local',
+      load: [
+        () => ({
+          jwt: {
+            secret: process.env.JWT_SECRET,
+            expiresIn: process.env.JWT_EXPIRES_IN,
+          },
+        }),
+      ],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -20,14 +30,24 @@ import type { ApolloDriverConfig } from '@nestjs/apollo';
       buildSchemaOptions: {
         dateScalarMode: 'timestamp',
       },
-      // biome-ignore lint/complexity/useLiteralKeys: <explanation>
-      context: ({ req }) => ({ user: req['user'] }),
+      context: ({ req, res }) => ({ req, res }),
     }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        store: redisStore as unknown as CacheStore,
+        host: configService.get('REDIS_HOST'),
+        port: configService.get('REDIS_PORT'),
+      }),
+      inject: [ConfigService],
+    }),
+    AuthModule,
     UsersModule,
-    // AuthModule,
+    // PostsModule,
+    // ImagesModule,
+    // TagsModule,
   ],
-  controllers: [],
   providers: [PrismaService],
-  exports: [PrismaService],
 })
 export class AppModule {}
