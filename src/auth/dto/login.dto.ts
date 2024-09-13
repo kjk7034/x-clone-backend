@@ -7,10 +7,16 @@ export class LoginInput {
 
   @Field()
   password: string;
+
+  @Field({ nullable: true })
+  deviceId?: string;
 }
 
 @ObjectType()
 export class LoginResponse {
   @Field()
   access_token: string;
+
+  @Field()
+  sessionId: string;
 }

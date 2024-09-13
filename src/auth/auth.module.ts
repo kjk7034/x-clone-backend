@@ -7,7 +7,6 @@ import { UsersModule } from '../users/users.module';
 import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { GqlAuthGuard } from './guards/gql-auth.guard';
-import { RestAuthGuard } from './guards/rest-auth.guard';
 import { JwtAuthService } from './jwt.service';
 import { JwtStrategy } from './jwt/jwt.strategy';
 
@@ -25,7 +24,7 @@ import { JwtStrategy } from './jwt/jwt.strategy';
     ConfigModule,
     forwardRef(() => UsersModule),
   ],
-  providers: [AuthService, AuthResolver, JwtAuthService, GqlAuthGuard, RestAuthGuard, JwtStrategy],
-  exports: [AuthService, JwtAuthService, GqlAuthGuard, RestAuthGuard],
+  providers: [AuthService, AuthResolver, JwtAuthService, GqlAuthGuard, JwtStrategy],
+  exports: [AuthService, JwtAuthService, GqlAuthGuard],
 })
 export class AuthModule {}

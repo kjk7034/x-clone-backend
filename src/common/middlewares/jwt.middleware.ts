@@ -1,4 +1,4 @@
-import { Injectable, type NestMiddleware } from '@nestjs/common';
+import { Injectable, type NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { NextFunction, Request, Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
@@ -19,20 +19,23 @@ export class JwtMiddleware implements NestMiddleware {
       const [bearer, token] = authHeader.split(' ');
       if (bearer === 'Bearer' && token) {
         try {
-          const payload = this.jwtService.verify(token);
-          const isValid = await this.authService.validateToken(payload.sub);
-          if (isValid) {
-            const user = await this.usersService.findOne(payload.sub);
-            if (user) {
-              // biome-ignore lint/complexity/useLiteralKeys: <explanation>
-              req['user'] = user;
-            }
+          const payload = await this.authService.verifyToken(token);
+          if (payload) {
+            // Attach the user and session information to the request
+            (req as any).user = {
+              id: payload.sub,
+              email: payload.email,
+              sessionId: payload.sessionId,
+              deviceId: payload.deviceId,
+            };
           }
         } catch (error) {
-          console.log('error', error);
-          // 토큰이 유효하지 않거나 만료된 경우
-          // 여기서 에러를 throw하지 않고, 다음 미들웨어로 넘깁니다.
-          // GraphQL의 컨텍스트에서 인증 상태를 확인할 수 있습니다.
+          if (error instanceof UnauthorizedException) {
+            // Don't throw here, just log and continue
+            console.log('JWT validation failed:', error.message);
+          } else {
+            console.error('Unexpected error in JWT middleware:', error);
+          }
         }
       }
     }

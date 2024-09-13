@@ -17,11 +17,6 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const canActivate = await super.canActivate(context);
-    if (!canActivate) {
-      return false;
-    }
-
     const request = this.getRequest(context);
     const token = this.extractTokenFromHeader(request);
 
@@ -36,7 +31,7 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
       const payload = await this.authService.verifyToken(token);
       this.logger.debug(`Token verified, payload: ${JSON.stringify(payload)}`);
 
-      const isValid = await this.authService.validateToken(payload.sub);
+      const isValid = await this.authService.validateToken(payload.sub, payload.sessionId, token);
       this.logger.debug(`Token validation result: ${isValid}`);
 
       if (!isValid) {
@@ -44,10 +39,21 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
         throw new UnauthorizedException('Invalid token');
       }
 
-      request.user = await this.authService.validateUser(payload);
+      const user = await this.authService.validateUser(payload);
+      if (!user) {
+        this.logger.warn(`User not found for payload ${JSON.stringify(payload)}`);
+        throw new UnauthorizedException('User not found');
+      }
+
+      request.user = {
+        ...user,
+        sessionId: payload.sessionId,
+        deviceId: payload.deviceId,
+      };
       this.logger.debug(`User validated: ${JSON.stringify(request.user)}`);
       return true;
     } catch (error) {
+      this.logger.error(`Error in canActivate: ${error.message}`);
       throw new UnauthorizedException('Invalid token');
     }
   }

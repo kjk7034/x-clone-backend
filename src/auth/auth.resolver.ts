@@ -1,5 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from 'src/users/entities/user.entity';
 import { AuthService } from './auth.service';
@@ -11,13 +11,19 @@ export class AuthResolver {
   constructor(private authService: AuthService) {}
 
   @Mutation(() => LoginResponse)
-  async login(@Args('loginInput') loginInput: LoginInput) {
+  async login(
+    @Args('loginInput') loginInput: LoginInput,
+    @Args('deviceId', { nullable: true }) deviceId?: string,
+  ) {
     try {
-      const result = await this.authService.login(loginInput.email, loginInput.password);
+      const result = await this.authService.login(loginInput.email, loginInput.password, deviceId);
       if (!result) {
         throw new Error('Invalid credentials');
       }
-      return { access_token: result.access_token };
+      return {
+        access_token: result.access_token,
+        sessionId: result.sessionId,
+      };
     } catch (error) {
       throw new Error(error.message || 'An error occurred during login');
     }
@@ -25,9 +31,15 @@ export class AuthResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(GqlAuthGuard)
-  async logout(@CurrentUser() user: User) {
-    console.log('logout user', user);
-    return this.authService.logout(user.id);
+  async logoutAllDevices(@CurrentUser() user: User) {
+    return this.authService.logoutAllDevices(user.id);
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlAuthGuard)
+  async logout(@CurrentUser() user: User, @Context() context) {
+    const sessionId = context.req.user.sessionId;
+    return this.authService.logout(user.id, sessionId);
   }
 
   @Query(() => User)

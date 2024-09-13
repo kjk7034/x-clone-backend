@@ -17,6 +17,7 @@ scalar Timestamp
 
 type LoginResponse {
   access_token: String!
+  sessionId: String!
 }
 
 type Query {
@@ -25,7 +26,8 @@ type Query {
 }
 
 type Mutation {
-  login(loginInput: LoginInput!): LoginResponse!
+  login(loginInput: LoginInput!, deviceId: String): LoginResponse!
+  logoutAllDevices: Boolean!
   logout: Boolean!
   createUser(createUserInput: CreateUserInput!): User!
   updateUser(updateUserInput: UpdateUserInput!): User!
@@ -34,6 +36,7 @@ type Mutation {
 input LoginInput {
   email: String!
   password: String!
+  deviceId: String
 }
 
 input CreateUserInput {

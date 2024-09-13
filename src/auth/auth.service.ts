@@ -3,20 +3,27 @@ import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/commo
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Cache } from 'cache-manager';
+import Redis from 'ioredis';
 import { UsersService } from 'src/users/users.service';
+import { v4 as uuidv4 } from 'uuid';
 import { LoginResponse } from './dto/login.dto';
+
+const TOKEN_EXPIRATION = Number.parseInt(process.env.TOKEN_EXPIRATION || '3600000', 10);
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private redisClient: Redis;
 
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) {
+    this.redisClient = (this.cacheManager as any).store.getClient();
+  }
 
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(email: string, password: string, deviceId?: string): Promise<LoginResponse> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -27,22 +34,43 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const payload = { email: user.email, sub: user.id };
+    const sessionId = uuidv4();
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      sessionId,
+      deviceId: deviceId || `default_${uuidv4()}`,
+    };
     const token = this.jwtService.sign(payload);
-    await this.cacheManager.set(`auth_${user.id}`, token, 3600000); // 1시간 동안 저장
+
+    await this.cacheManager.set(`auth_${user.id}_${sessionId}`, token, TOKEN_EXPIRATION);
+
+    this.logger.log(`User logged in: ${user.id}, Device: ${deviceId}`);
+
     return {
       access_token: token,
+      sessionId,
     };
   }
 
-  async logout(userId: string): Promise<boolean> {
-    await this.cacheManager.del(`auth_${userId}`);
+  async logout(userId: string, sessionId: string): Promise<boolean> {
+    await this.cacheManager.del(`auth_${userId}_${sessionId}`);
+    this.logger.log(`User logged out: ${userId}, Session: ${sessionId}`);
     return true;
   }
 
-  async validateToken(userId: string): Promise<boolean> {
-    const cachedToken = await this.cacheManager.get(`auth_${userId}`);
-    return !!cachedToken;
+  async logoutAllDevices(userId: string): Promise<boolean> {
+    const keys = await this.redisClient.keys(`auth_${userId}_*`);
+    for (const key of keys) {
+      await this.cacheManager.del(key);
+    }
+    this.logger.log(`User logged out from all devices: ${userId}`);
+    return true;
+  }
+
+  async validateToken(userId: string, sessionId: string, token: string): Promise<boolean> {
+    const storedToken = await this.cacheManager.get(`auth_${userId}_${sessionId}`);
+    return storedToken === token;
   }
 
   async validateUser(payload: any): Promise<any> {
@@ -56,9 +84,12 @@ export class AuthService {
   async verifyToken(token: string): Promise<any> {
     try {
       const payload = this.jwtService.verify(token);
-      const isValid = await this.validateToken(payload.sub);
+      const isValid = await this.validateToken(payload.sub, payload.sessionId, token);
       if (!isValid) {
         throw new UnauthorizedException('Token not found in cache');
+      }
+      if (await this.isTokenBlacklisted(token)) {
+        throw new UnauthorizedException('Token is blacklisted');
       }
       return payload;
     } catch (error) {
@@ -78,11 +109,11 @@ export class AuthService {
     }
   }
 
-  async refreshToken(userId: string): Promise<string | null> {
-    const cachedToken = await this.cacheManager.get<string>(`auth_${userId}`);
+  async refreshToken(userId: string, sessionId: string): Promise<string | null> {
+    const cachedToken = await this.cacheManager.get<string>(`auth_${userId}_${sessionId}`);
     if (cachedToken) {
       // 토큰 유효 기간 연장
-      await this.cacheManager.set(`auth_${userId}`, cachedToken, 3600000);
+      await this.cacheManager.set(`auth_${userId}_${sessionId}`, cachedToken, TOKEN_EXPIRATION);
       return cachedToken;
     }
     return null;
