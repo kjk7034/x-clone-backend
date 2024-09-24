@@ -11,26 +11,21 @@ API는 REST가 아닌 많이 경험하지 않은 GraphQL로 제공하고, 추후
 ## 설치 및 실행
 
 ```bash
-# Docker 설정(redis, mongodb)
-docker compose up -d
-
-# install
-pnpm i
-
-# env 파일 생성
-NODE_TLS_REJECT_UNAUTHORIZED=0
-DATABASE_URL=mongodb://localhost:27018/x-clone?directConnection=true
-JWT_SECRET=
+# .env.local 파일 생성
+DATABASE_URL=mongodb://x-clone-mongo:27017/x-clone?directConnection=true
+JWT_SECRET=JWT_SECRET
 JWT_EXPIRES_IN=1h
-REDIS_HOST=localhost
-REDIS_PORT=6379
+REDIS_URL=redis://redis:6379
+TOKEN_EXPIRATION=3600000
 
-# prisma schema generate
-pnpm run prisma:generate
+# Docker Compose를 사용하여 이미지 빌드 (캐시 사용하지 않음)
+docker-compose build --no-cache
 
-# start
-pnpm run start:dev
+# Docker Compose를 사용하여 컨테이너 실행 (백그라운드 모드)
+docker compose up -d
 ```
+
+`http://localhost:4000/graphql` 실행
 
 ## GraphQL API 엔드포인트 예시
 
@@ -41,7 +36,3 @@ pnpm run start:dev
 설치 및 개발하는 과정에서 발생한 내용들에 대한 메모
 
 [DEVELOPMENT_NOTES](./docs/DEVELOPMENT_NOTES.md)
-
-## 배포 계획
-
-사내 클라우드 사용
