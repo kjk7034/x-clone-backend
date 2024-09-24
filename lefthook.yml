@@ -1,6 +1,26 @@
 pre-commit:
+  parallel: true
   commands:
     check:
       glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
-      run: npx @biomejs/biome check --write --files-ignore-unknown=true --colors=off {staged_files}
+      run: pnpm biome check --apply --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
       stage_fixed: true
+    lint:
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx}"
+      run: pnpm biome lint --apply --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+  scripts:
+    "check-pretty":
+      runner: bash
+      command: |
+        FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+        [ -z "$FILES" ] && exit 0
+
+        echo "Running Biome check on staged files..."
+        pnpm biome check --apply --no-errors-on-unmatched $FILES
+
+        echo "Running Biome lint on staged files..."
+        pnpm biome lint --apply --no-errors-on-unmatched $FILES
+
+        echo "Staging fixed files..."
+        git add $FILES
