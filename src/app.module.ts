@@ -14,7 +14,7 @@ import { UsersModule } from './users/users.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.NODE_ENV === 'dev' ? '.env.local' : '.env.local',
+      envFilePath: '.env.local',
       load: [
         () => ({
           jwt: {
@@ -37,8 +37,7 @@ import { UsersModule } from './users/users.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         store: redisStore as unknown as CacheStore,
-        host: configService.get('REDIS_HOST'),
-        port: configService.get('REDIS_PORT'),
+        url: configService.get('REDIS_URL'),
       }),
       inject: [ConfigService],
     }),
