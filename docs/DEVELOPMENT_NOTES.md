@@ -19,7 +19,7 @@ REDIS_PORT=
 
 ## Prisma generate
 
-`npx prisma generate` 실행
+`npx prisma generate --schema=./src/prisma/schema.prisma` 실행
 
 ## Prisma + MongoDB 겪은 이슈
 
@@ -47,4 +47,14 @@ docker ps
 docker exec -it x-clone-redis redis-cli
 
 127.0.0.1:6379> keys *
+```
+
+## 로컬 개발시 .env.local
+
+```
+DATABASE_URL=mongodb://localhost:27017/x-clone?directConnection=true
+JWT_SECRET=JWT_SECRET
+JWT_EXPIRES_IN=1h
+REDIS_URL=redis://localhost:6379
+TOKEN_EXPIRATION=3600000
 ```
