@@ -22,7 +22,7 @@
     "prisma:generate": "prisma generate --schema=src/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema=src/prisma/schema.prisma",
     "prisma:studio": "prisma studio --schema=src/prisma/schema.prisma",
-    "prepare": "if [ \"$NODE_ENV\" != \"production\" ]; then lefthook install; fi"
+    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { require('child_process').execSync('lefthook install', {stdio: 'inherit'}) }\""
   },
   "dependencies": {
     "@apollo/server": "^4.11.0",
